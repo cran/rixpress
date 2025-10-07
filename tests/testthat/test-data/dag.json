@@ -1,0 +1,40 @@
+{
+  "derivations": [
+    {
+      "deriv_name": ["mtcars"],
+      "depends": [],
+      "decoder": {},
+      "type": ["rxp_r"]
+    },
+    {
+      "deriv_name": ["mtcars_am"],
+      "depends": ["mtcars"],
+      "decoder": ["readRDS"],
+      "type": ["rxp_r"]
+    },
+    {
+      "deriv_name": ["mtcars_head"],
+      "depends": ["mtcars_am"],
+      "decoder": ["readRDS"],
+      "type": ["rxp_r"]
+    },
+    {
+      "deriv_name": ["mtcars_tail"],
+      "depends": ["mtcars_head"],
+      "decoder": ["readRDS"],
+      "type": ["rxp_r"]
+    },
+    {
+      "deriv_name": ["mtcars_mpg"],
+      "depends": ["mtcars_tail"],
+      "decoder": ["readRDS"],
+      "type": ["rxp_r"]
+    },
+    {
+      "deriv_name": ["page"],
+      "depends": ["mtcars_head", "mtcars_tail", "mtcars_mpg"],
+      "decoder": {},
+      "type": ["rxp_qmd"]
+    }
+  ]
+}

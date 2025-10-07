@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+
+
+<title>Polyglot pipelines and literate programming with Quarto or R Markdown</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+
+<style type="text/css">
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
+</style>
+<style type="text/css" data-origin="pandoc">
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Polyglot pipelines and literate programming
+with Quarto or R Markdown</h1>
+
+
+
+<p>This vignette demonstrates how to build a polyglot pipeline and
+assumes you’ve read <code>vignette(&quot;core-functions&quot;)</code>.</p>
+<p>For a video version of this vignette, <a href="https://youtu.be/LYtN1aOsTWQ">click here</a>.</p>
+<p>You can find all the code of this example <a href="https://github.com/b-rodrigues/rixpress_demos/tree/master/r_python_quarto">here</a>.
+The built Quarto document can be viewed <a href="https://b-rodrigues.github.io/rixpress_demos/r_python_quarto/index.html">here</a>
+(the pipeline in this vignette is a slightly simplified version). For
+the Rmd version, look <a href="https://github.com/b-rodrigues/rixpress_demos/blob/master/r_python_rmd/Readme.md">here</a>.</p>
+<p>For various other examples of polyglot pipelines, check out the
+folder labeled <code>python_r</code> in this <a href="https://github.com/b-rodrigues/rixpress_demos/">github
+repository</a>.</p>
+<div id="analysing-the-mtcars-dataset-using-r-and-python" class="section level2">
+<h2>Analysing the mtcars dataset using R and Python</h2>
+<p><code>{rixpress}</code> makes it easy to write polyglot
+(multilingual) data science pipelines with derivations that run R or
+Python code. This vignette explains how you can easily set up such a
+pipeline.</p>
+<p>Let’s assume that you only have <code>Nix</code> installed on your
+system, and no R installation (this is the ideal scenario: if you plan
+to use <code>Nix</code> full-time for your development environments, you
+shouldn’t have a system-wide installation of R).</p>
+<p>Before installing R and R packages for your pipeline, install <a href="https://www.cachix.org/">cachix</a> and configure the
+<code>rstats-on-nix</code> cache. This way, pre-compiled, binary
+packages will be used instead of being built from source. Run the
+following line in a terminal:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="ex">nix-env</span> <span class="at">-iA</span> cachix <span class="at">-f</span> https://cachix.org/api/v1/install</span></code></pre></div>
+<p>then use the cache:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="ex">cachix</span> use rstats-on-nix</span></code></pre></div>
+<p>There might be a message telling you to add your user to a
+configuration file by executing another command. If so, follow the
+instructions; you only need to do this once per machine you want to use
+<code>{rixpress}</code> on. Many thanks to <a href="https://www.cachix.org/">Cachix</a> for sponsoring the
+<code>rstats-on-nix</code> cache!</p>
+<p>Now that the cache is configured, it’s time to bootstrap your
+development environment. Run this line:</p>
+<pre><code>nix-shell --expr &quot;$(curl -sl https://raw.githubusercontent.com/ropensci/rix/main/inst/extdata/default.nix)&quot;</code></pre>
+<p>This will drop you into a temporary shell with R and both
+<code>{rix}</code> and <code>{rixpress}</code> available. Simply start R
+by typing <code>R</code>, and load <code>{rixpress}</code> and call
+<code>rxp_init()</code> which will generate two files,
+<code>gen-env.R</code> and <code>gen-pipeline.R</code>. You can open
+<code>gen-env.R</code> in your favourite text editor and define the
+execution environment there:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="fu">library</span>(rix)</span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a></span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a><span class="fu">rix</span>(</span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a>  <span class="at">date =</span> <span class="st">&quot;2025-03-31&quot;</span>,</span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a>  <span class="at">r_pkgs =</span> <span class="fu">c</span>(<span class="st">&quot;dplyr&quot;</span>, <span class="st">&quot;igraph&quot;</span>, <span class="st">&quot;reticulate&quot;</span>, <span class="st">&quot;quarto&quot;</span>),</span>
+<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a>  <span class="at">git_pkgs =</span> <span class="fu">list</span>(</span>
+<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a>    <span class="at">package_name =</span> <span class="st">&quot;rixpress&quot;</span>,</span>
+<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a>    <span class="at">repo_url =</span> <span class="st">&quot;https://github.com/ropensci/rixpress&quot;</span>,</span>
+<span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a>    <span class="at">commit =</span> <span class="st">&quot;HEAD&quot;</span></span>
+<span id="cb4-10"><a href="#cb4-10" tabindex="-1"></a>  ),</span>
+<span id="cb4-11"><a href="#cb4-11" tabindex="-1"></a>  <span class="at">py_conf =</span> <span class="fu">list</span>(</span>
+<span id="cb4-12"><a href="#cb4-12" tabindex="-1"></a>    <span class="at">py_version =</span> <span class="st">&quot;3.12&quot;</span>,</span>
+<span id="cb4-13"><a href="#cb4-13" tabindex="-1"></a>    <span class="at">py_pkgs =</span> <span class="fu">c</span>(<span class="st">&quot;pandas&quot;</span>, <span class="st">&quot;polars&quot;</span>, <span class="st">&quot;pyarrow&quot;</span>)</span>
+<span id="cb4-14"><a href="#cb4-14" tabindex="-1"></a>  ),</span>
+<span id="cb4-15"><a href="#cb4-15" tabindex="-1"></a>  <span class="at">ide =</span> <span class="st">&quot;none&quot;</span>,</span>
+<span id="cb4-16"><a href="#cb4-16" tabindex="-1"></a>  <span class="at">project_path =</span> <span class="st">&quot;.&quot;</span>,</span>
+<span id="cb4-17"><a href="#cb4-17" tabindex="-1"></a>  <span class="at">overwrite =</span> <span class="cn">TRUE</span></span>
+<span id="cb4-18"><a href="#cb4-18" tabindex="-1"></a>)</span></code></pre></div>
+<p>Notice the <code>py_conf</code> argument to <code>rix()</code>: this
+will install Python and the listed Python packages in that environment.
+You’ll notice that we add <code>{reticulate}</code> to the list of R
+packages to install as well; this is primarily for converting data
+between R and Python if you’re not using a universal format like JSON.
+Python build steps are executed in a standard Python shell and do not
+require <code>{reticulate}</code> for Python code execution itself, so
+if you’re only using JSON to transfer data, <code>{reticulate}</code> is
+not required. If you prefer, you can also use <code>uv</code> to manage
+Python and Python packages. While this is not a pure Nix solution, it is
+still useful in cases you need a specific Python package that might not
+be available through Nix, as not all PyPI packages are available through
+Nix. In this case, refer to this <a href="https://docs.ropensci.org/rix/articles/d1-installing-r-packages-in-a-nix-environment.html#installing-python-packages-not-available-via-nixpkgs-impure">section</a>
+of the <em>Installing R and Python packages in a Nix environment</em>
+vignette from <code>{rix}</code>.</p>
+<p>Now that you defined the execution environment of the pipeline, you
+can run the <code>gen-env.R</code> script, still from the temporary
+<code>Nix</code> shell by running <code>source(&quot;gen-env.R&quot;)</code>. This
+will generate the required <code>default.nix</code>. Then, quit R and
+the temporary shell (CTRL-D or <code>quit()</code> in R,
+<code>exit</code> in the terminal) and then build the environment
+defined by the freshly generated <code>default.nix</code> by typing
+<code>nix-build</code>. This will now build the execution environment of
+the pipeline. You can use this environment to work on your project
+interactively as usual. To learn more, check out <a href="https://docs.ropensci.org/rix/"><code>{rix}</code></a>.</p>
+<p>You can now edit the pipeline script in
+<code>gen-pipeline.R</code>:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="fu">library</span>(rixpress)</span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a><span class="fu">library</span>(igraph)</span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a></span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a><span class="fu">list</span>(</span>
+<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a>  <span class="fu">rxp_py_file</span>(</span>
+<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a>    <span class="at">name =</span> mtcars_pl,</span>
+<span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a>    <span class="at">path =</span> <span class="st">&#39;data/mtcars.csv&#39;</span>,</span>
+<span id="cb5-8"><a href="#cb5-8" tabindex="-1"></a>    <span class="at">read_function =</span> <span class="st">&quot;lambda x: pl.read_csv(x, separator=&#39;|&#39;)&quot;</span></span>
+<span id="cb5-9"><a href="#cb5-9" tabindex="-1"></a>  ),</span>
+<span id="cb5-10"><a href="#cb5-10" tabindex="-1"></a></span>
+<span id="cb5-11"><a href="#cb5-11" tabindex="-1"></a>  <span class="fu">rxp_py</span>(</span>
+<span id="cb5-12"><a href="#cb5-12" tabindex="-1"></a>    <span class="co"># reticulate doesn&#39;t support polars DFs yet, so need to convert</span></span>
+<span id="cb5-13"><a href="#cb5-13" tabindex="-1"></a>    <span class="co"># first to pandas DF</span></span>
+<span id="cb5-14"><a href="#cb5-14" tabindex="-1"></a>    <span class="at">name =</span> mtcars_pl_am,</span>
+<span id="cb5-15"><a href="#cb5-15" tabindex="-1"></a>    <span class="at">expr =</span> <span class="st">&quot;mtcars_pl.filter(pl.col(&#39;am&#39;) == 1).to_pandas()&quot;</span></span>
+<span id="cb5-16"><a href="#cb5-16" tabindex="-1"></a>  ),</span>
+<span id="cb5-17"><a href="#cb5-17" tabindex="-1"></a></span>
+<span id="cb5-18"><a href="#cb5-18" tabindex="-1"></a>  <span class="fu">rxp_py2r</span>(</span>
+<span id="cb5-19"><a href="#cb5-19" tabindex="-1"></a>    <span class="at">name =</span> mtcars_am,</span>
+<span id="cb5-20"><a href="#cb5-20" tabindex="-1"></a>    <span class="at">expr =</span> mtcars_pl_am</span>
+<span id="cb5-21"><a href="#cb5-21" tabindex="-1"></a>  ),</span>
+<span id="cb5-22"><a href="#cb5-22" tabindex="-1"></a></span>
+<span id="cb5-23"><a href="#cb5-23" tabindex="-1"></a>  <span class="fu">rxp_r</span>(</span>
+<span id="cb5-24"><a href="#cb5-24" tabindex="-1"></a>    <span class="at">name =</span> mtcars_head,</span>
+<span id="cb5-25"><a href="#cb5-25" tabindex="-1"></a>    <span class="at">expr =</span> <span class="fu">my_head</span>(mtcars_am),</span>
+<span id="cb5-26"><a href="#cb5-26" tabindex="-1"></a>    <span class="at">user_functions =</span> <span class="st">&quot;functions.R&quot;</span></span>
+<span id="cb5-27"><a href="#cb5-27" tabindex="-1"></a>  ),</span>
+<span id="cb5-28"><a href="#cb5-28" tabindex="-1"></a></span>
+<span id="cb5-29"><a href="#cb5-29" tabindex="-1"></a>  <span class="fu">rxp_r2py</span>(</span>
+<span id="cb5-30"><a href="#cb5-30" tabindex="-1"></a>    <span class="at">name =</span> mtcars_head_py,</span>
+<span id="cb5-31"><a href="#cb5-31" tabindex="-1"></a>    <span class="at">expr =</span> mtcars_head</span>
+<span id="cb5-32"><a href="#cb5-32" tabindex="-1"></a>  ),</span>
+<span id="cb5-33"><a href="#cb5-33" tabindex="-1"></a></span>
+<span id="cb5-34"><a href="#cb5-34" tabindex="-1"></a>  <span class="fu">rxp_py</span>(</span>
+<span id="cb5-35"><a href="#cb5-35" tabindex="-1"></a>    <span class="at">name =</span> mtcars_tail_py,</span>
+<span id="cb5-36"><a href="#cb5-36" tabindex="-1"></a>    <span class="at">expr =</span> <span class="st">&#39;mtcars_head_py.tail()&#39;</span></span>
+<span id="cb5-37"><a href="#cb5-37" tabindex="-1"></a>  ),</span>
+<span id="cb5-38"><a href="#cb5-38" tabindex="-1"></a></span>
+<span id="cb5-39"><a href="#cb5-39" tabindex="-1"></a>  <span class="fu">rxp_py2r</span>(</span>
+<span id="cb5-40"><a href="#cb5-40" tabindex="-1"></a>    <span class="at">name =</span> mtcars_tail,</span>
+<span id="cb5-41"><a href="#cb5-41" tabindex="-1"></a>    <span class="at">expr =</span> mtcars_tail_py</span>
+<span id="cb5-42"><a href="#cb5-42" tabindex="-1"></a>  ),</span>
+<span id="cb5-43"><a href="#cb5-43" tabindex="-1"></a></span>
+<span id="cb5-44"><a href="#cb5-44" tabindex="-1"></a>  <span class="fu">rxp_r</span>(</span>
+<span id="cb5-45"><a href="#cb5-45" tabindex="-1"></a>    <span class="at">name =</span> mtcars_mpg,</span>
+<span id="cb5-46"><a href="#cb5-46" tabindex="-1"></a>    <span class="at">expr =</span> dplyr<span class="sc">::</span><span class="fu">select</span>(mtcars_tail, mpg)</span>
+<span id="cb5-47"><a href="#cb5-47" tabindex="-1"></a>  ),</span>
+<span id="cb5-48"><a href="#cb5-48" tabindex="-1"></a></span>
+<span id="cb5-49"><a href="#cb5-49" tabindex="-1"></a>  <span class="fu">rxp_qmd</span>(</span>
+<span id="cb5-50"><a href="#cb5-50" tabindex="-1"></a>    <span class="at">name =</span> page,</span>
+<span id="cb5-51"><a href="#cb5-51" tabindex="-1"></a>    <span class="at">qmd_file =</span> <span class="st">&quot;my_doc/page.qmd&quot;</span>,</span>
+<span id="cb5-52"><a href="#cb5-52" tabindex="-1"></a>    <span class="at">additional_files =</span> <span class="fu">c</span>(<span class="st">&quot;my_doc/content.qmd&quot;</span>, <span class="st">&quot;my_doc/images&quot;</span>)</span>
+<span id="cb5-53"><a href="#cb5-53" tabindex="-1"></a>  )</span>
+<span id="cb5-54"><a href="#cb5-54" tabindex="-1"></a>) <span class="sc">|&gt;</span></span>
+<span id="cb5-55"><a href="#cb5-55" tabindex="-1"></a>  <span class="fu">rxp_populate</span>(</span>
+<span id="cb5-56"><a href="#cb5-56" tabindex="-1"></a>    <span class="at">project_path =</span> <span class="st">&quot;.&quot;</span>,</span>
+<span id="cb5-57"><a href="#cb5-57" tabindex="-1"></a>    <span class="at">py_imports =</span> <span class="fu">c</span>(<span class="at">polars =</span> <span class="st">&quot;import polars as pl&quot;</span>)</span>
+<span id="cb5-58"><a href="#cb5-58" tabindex="-1"></a>  )</span></code></pre></div>
+<p>As you can see, it starts by reading in some data using the Python
+<code>polars</code> package, and then converts it to an R data frame for
+further manipulation, converts it back to a Python data frame and back
+to R. You’ll notice that at some point the <em>head</em> of the data is
+computed using a user-defined function called <code>my_head()</code>.
+User-defined functions should all go into a script called
+<code>functions.R</code> or <code>functions.py</code> and derivations
+that use them need to be aware of them by setting the
+<code>user_functions</code> argument. If derivations need further files
+to be available in the sandbox, these should be listed in the
+<code>additional_files</code> argument. A main difference between
+<code>rxp_py()</code> and <code>rxp_r()</code> is that Python code
+should be passed as a string, and not as an expression.</p>
+<p>What’s also import for Python is to define how packages should be
+imported. In this case, I want <code>polars</code> to be imported using
+<code>import polars as pl</code>, so I need to use the
+<code>py_imports</code> argument of <code>rxp_populate()</code>. It is
+possible to skip this, but then you’d need to write the entire package
+name each time: <code>polars.read_csv()</code>. This is sometimes
+mandatory, for example if you want to import a package’s submodule:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a>py_imports <span class="ot">=</span> <span class="fu">c</span>(<span class="at">pillow =</span> <span class="st">&quot;from PIL import Image&quot;</span>)</span></code></pre></div>
+<p>The package is called <code>pillow</code>, so <code>{rixpress}</code>
+will write the statement as <code>import pillow</code>, but this will
+simply not work.</p>
+<p>It is also possible to use <code>adjust_import()</code> after the
+creation of the <code>pipeline.nix</code> but more importantly is
+<code>add_import()</code>. This is required in cases where a built-in
+Python module needs to be loaded, such as <code>os</code>. Because the
+<code>os</code> module is not listed in the required Python packages in
+<code>rix(..., py_conf = ...)</code> to create the execution
+environment, it won’t get automatically loaded by
+<code>rxp_populate()</code>. Because of this, if <code>os</code> is
+needed for the pipeline, <code>add_import()</code> is how you can add
+it. The <code>vignette(&quot;importing-data&quot;)</code> show such an
+example.</p>
+<p>If you want to use JSON to transfer data between derivations, you
+should use the <code>encoder</code> and <code>decoder</code> arguments
+respectively:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="fu">library</span>(rixpress)</span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a><span class="fu">library</span>(igraph)</span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a></span>
+<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a><span class="fu">list</span>(</span>
+<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a>  <span class="fu">rxp_py_file</span>(</span>
+<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a>    <span class="at">name =</span> mtcars_pl,</span>
+<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a>    <span class="at">path =</span> <span class="st">&quot;data/mtcars.csv&quot;</span>,</span>
+<span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a>    <span class="at">read_function =</span> <span class="st">&quot;lambda x: pl.read_csv(x, separator=&#39;|&#39;)&quot;</span></span>
+<span id="cb7-9"><a href="#cb7-9" tabindex="-1"></a>  ),</span>
+<span id="cb7-10"><a href="#cb7-10" tabindex="-1"></a></span>
+<span id="cb7-11"><a href="#cb7-11" tabindex="-1"></a>  <span class="fu">rxp_py</span>(</span>
+<span id="cb7-12"><a href="#cb7-12" tabindex="-1"></a>    <span class="at">name =</span> mtcars_pl_am,</span>
+<span id="cb7-13"><a href="#cb7-13" tabindex="-1"></a>    <span class="at">expr =</span> <span class="st">&quot;mtcars_pl.filter(pl.col(&#39;am&#39;) == 1)&quot;</span>,</span>
+<span id="cb7-14"><a href="#cb7-14" tabindex="-1"></a>    <span class="at">user_functions =</span> <span class="st">&quot;functions.py&quot;</span>,</span>
+<span id="cb7-15"><a href="#cb7-15" tabindex="-1"></a>    <span class="at">encoder =</span> <span class="st">&quot;serialize_to_json&quot;</span>,</span>
+<span id="cb7-16"><a href="#cb7-16" tabindex="-1"></a>  ),</span>
+<span id="cb7-17"><a href="#cb7-17" tabindex="-1"></a></span>
+<span id="cb7-18"><a href="#cb7-18" tabindex="-1"></a>  <span class="fu">rxp_r</span>(</span>
+<span id="cb7-19"><a href="#cb7-19" tabindex="-1"></a>    <span class="at">name =</span> mtcars_head,</span>
+<span id="cb7-20"><a href="#cb7-20" tabindex="-1"></a>    <span class="at">expr =</span> <span class="fu">my_head</span>(mtcars_pl_am),</span>
+<span id="cb7-21"><a href="#cb7-21" tabindex="-1"></a>    <span class="at">user_functions =</span> <span class="st">&quot;functions.R&quot;</span>,</span>
+<span id="cb7-22"><a href="#cb7-22" tabindex="-1"></a>    <span class="at">decoder =</span> <span class="st">&quot;jsonlite::fromJSON&quot;</span></span>
+<span id="cb7-23"><a href="#cb7-23" tabindex="-1"></a>  ),</span>
+<span id="cb7-24"><a href="#cb7-24" tabindex="-1"></a></span>
+<span id="cb7-25"><a href="#cb7-25" tabindex="-1"></a>  <span class="fu">rxp_r</span>(</span>
+<span id="cb7-26"><a href="#cb7-26" tabindex="-1"></a>    <span class="at">name =</span> mtcars_mpg,</span>
+<span id="cb7-27"><a href="#cb7-27" tabindex="-1"></a>    <span class="at">expr =</span> dplyr<span class="sc">::</span><span class="fu">select</span>(mtcars_head, mpg)</span>
+<span id="cb7-28"><a href="#cb7-28" tabindex="-1"></a>  )</span>
+<span id="cb7-29"><a href="#cb7-29" tabindex="-1"></a>) <span class="sc">|&gt;</span></span>
+<span id="cb7-30"><a href="#cb7-30" tabindex="-1"></a>  <span class="fu">rxp_populate</span>(</span>
+<span id="cb7-31"><a href="#cb7-31" tabindex="-1"></a>    <span class="at">project_path =</span> <span class="st">&quot;.&quot;</span>,</span>
+<span id="cb7-32"><a href="#cb7-32" tabindex="-1"></a>    <span class="at">py_imports =</span> <span class="fu">c</span>(<span class="at">polars =</span> <span class="st">&quot;import polars as pl&quot;</span>)</span>
+<span id="cb7-33"><a href="#cb7-33" tabindex="-1"></a>  )</span>
+<span id="cb7-34"><a href="#cb7-34" tabindex="-1"></a></span>
+<span id="cb7-35"><a href="#cb7-35" tabindex="-1"></a><span class="co"># Plot DAG for CI</span></span>
+<span id="cb7-36"><a href="#cb7-36" tabindex="-1"></a><span class="fu">rxp_dag_for_ci</span>()</span></code></pre></div>
+<p>The Python <code>serialize_to_json</code> function is defined in the
+<code>functions.py</code> script and looks like this:</p>
+<pre><code>def serialize_to_json(pl_df, path):
+    with open(path, &#39;w&#39;) as f:
+        f.write(pl_df.write_json())</code></pre>
+<p>The <code>encoder</code> and <code>decoder</code> arguments can be
+used to serialise objects using any function, for example
+<code>qs::save()</code> or machine learning-specific functions for
+specific models, such as those from <code>xgboost</code>.</p>
+</div>
+<div id="building-a-quarto-or-r-markdown-document" class="section level2">
+<h2>Building a Quarto or R Markdown document</h2>
+<p>The last pipeline I want to discuss builds a Quarto document using
+<code>rxp_qmd()</code> (use <code>rxp_rmd()</code> for an R Markdown
+document). Here again, the <code>additional_files</code> argument is
+used to make the derivation aware of required files to build the
+document. Here is what the source of the document looks like:</p>
+<pre class="text"><code>
+---
+title: &quot;Loading derivations outputs in a quarto doc&quot;
+format:
+  html:
+    embed-resources: true
+    toc: true
+---
+
+![Meme](images/meme.png)
+
+Use `rxp_read()` to show object in the document:
+
+```
+#| eval: true
+
+rixpress::rxp_read(&quot;mtcars_head&quot;)
+```
+
+```
+#| eval: true
+
+rixpress::rxp_read(&quot;mtcars_tail&quot;)
+```
+
+```
+#| eval: true
+
+rixpress::rxp_read(&quot;mtcars_mpg&quot;)
+```
+
+{{&lt; include content.qmd &gt;}}
+
+```
+#| eval: true
+
+rixpress::rxp_read(&quot;mtcars_tail_py&quot;)
+```
+</code></pre>
+<p>Just like in an interactive session, <code>rxp_read()</code> is used
+to retrieve the objects from the store. See how I refer to the other
+document <code>content.qmd</code> and the image
+<code>meme.png</code>.</p>
+<p>If you want to add further arguments to the Quarto command line tool,
+you can use the <code>args</code> argument:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a><span class="fu">rxp_qmd</span>(</span>
+<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a>  <span class="at">name =</span> page,</span>
+<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a>  <span class="at">qmd_file =</span> <span class="st">&quot;my_doc/page.qmd&quot;</span>,</span>
+<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a>  <span class="at">additional_files =</span> <span class="fu">c</span>(<span class="st">&quot;my_doc/content.qmd&quot;</span>, <span class="st">&quot;my_doc/images&quot;</span>),</span>
+<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a>  <span class="at">args =</span> <span class="st">&quot;--to typst&quot;</span></span>
+<span id="cb10-6"><a href="#cb10-6" tabindex="-1"></a>)</span></code></pre></div>
+<p>and don’t forget to add <code>typst</code> to the list of system
+packages in the call to <code>rix()</code>:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a><span class="fu">rix</span>(</span>
+<span id="cb11-2"><a href="#cb11-2" tabindex="-1"></a>  <span class="at">date =</span> <span class="st">&quot;2025-03-31&quot;</span>,</span>
+<span id="cb11-3"><a href="#cb11-3" tabindex="-1"></a>  <span class="at">r_pkgs =</span> <span class="fu">c</span>(<span class="st">&quot;dplyr&quot;</span>, <span class="st">&quot;igraph&quot;</span>, <span class="st">&quot;reticulate&quot;</span>, <span class="st">&quot;quarto&quot;</span>),</span>
+<span id="cb11-4"><a href="#cb11-4" tabindex="-1"></a>  <span class="at">system_pkgs =</span> <span class="st">&quot;typst&quot;</span>,</span>
+<span id="cb11-5"><a href="#cb11-5" tabindex="-1"></a>  <span class="at">git_pkgs =</span> <span class="fu">list</span>(...</span></code></pre></div>
+<p>For more examples, check out <a href="https://github.com/b-rodrigues/rixpress_demos">rixpress_demos
+repository</a>. These examples demonstrate additional features of
+<code>{rixpress}</code>, including:</p>
+<ul>
+<li><a href="https://github.com/b-rodrigues/rixpress_demos/tree/master/r_py_xgboost">Using
+the Python ‘xgboost’ library and transferring data to R</a></li>
+<li><a href="https://github.com/b-rodrigues/rixpress_demos/tree/master/many_inputs_example">Importing
+multiple files at once</a></li>
+<li><a href="https://github.com/b-rodrigues/rixpress_demos/tree/master/r_multi_envs">Using
+multiple environments instead of a single <code>default.nix</code>
+file</a></li>
+</ul>
+<p>and many others! Don’t hesitate to submit more examples as well!</p>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
