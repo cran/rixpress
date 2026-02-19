@@ -1,4 +1,5 @@
 # Constants for language configuration
+# Constants for language configuration
 LANG_CONFIG <- list(
   R = list(
     source_cmd = "source('%s')",
@@ -17,7 +18,62 @@ LANG_CONFIG <- list(
   )
 )
 
-#' Clean user functions vector
+extract_python_version <- function(nix_file, project_path = ".") {
+  file_path <- file.path(project_path, nix_file)
+
+  if (!file.exists(file_path)) {
+    warning(paste("File not found:", file_path, "- using python3 as fallback"))
+    return("python3")
+  }
+
+  lines <- readLines(file_path)
+
+  # Find the pyconf block
+  pyconf_start <- grep("^\\s*pyconf\\s*=", lines)
+
+  if (length(pyconf_start) == 0) {
+    # No pyconf found, return default
+    return("python3")
+  }
+
+  pyconf_start <- pyconf_start[1]
+
+  # Find the end of the pyconf block (closing };)
+  end_idxs <- grep("^\\s*\\};\\s*$", lines)
+  pyconf_end <- end_idxs[end_idxs > pyconf_start][1]
+
+  if (is.na(pyconf_end)) {
+    warning("Could not find end of pyconf block - using python3 as fallback")
+    return("python3")
+  }
+
+  # Extract the pyconf block
+  pyconf_lines <- lines[pyconf_start:pyconf_end]
+  pyconf_text <- paste(pyconf_lines, collapse = "\n")
+
+  # Look for python<version>Packages pattern
+  # Matches: python39Packages, python310Packages, python311Packages, etc.
+  pattern <- "python(\\d+)Packages"
+  matches <- regmatches(
+    pyconf_text,
+    gregexpr(pattern, pyconf_text, perl = TRUE)
+  )[[1]]
+
+  if (length(matches) == 0) {
+    # No specific version found, use default
+    return("python3")
+  }
+
+  # Extract the version number from the first match
+  version_match <- regmatches(matches[1], regexec(pattern, matches[1]))[[1]]
+  version_num <- version_match[2]
+
+  # Return pythonXYZ format (e.g., python312, python313)
+  return(paste0("python", version_num))
+}
+
+
+#' Clean User Functions Vector
 #'
 #' Removes empty character entries from the provided `user_functions` vector.
 #'
@@ -31,7 +87,7 @@ clean_user_functions <- function(user_functions) {
   user_functions[nzchar(user_functions)]
 }
 
-#' Build code import/source commands for user functions
+#' Build Code Import/Source Commands for User Functions
 #'
 #' Creates language-specific commands to load user-defined function scripts.
 #'
@@ -54,7 +110,7 @@ build_user_code_cmd <- function(user_functions, lang) {
   paste(commands, collapse = "\n")
 }
 
-#' Build environment variable export commands
+#' Build Environment Variable Export Commands
 #'
 #' Generates shell export commands for setting environment variables before
 #' running the build script.
@@ -71,7 +127,7 @@ build_env_exports <- function(env_var) {
   paste0(paste(exports, collapse = "\n"), "\n")
 }
 
-#' Build Nix src part
+#' Build Nix Src Part
 #'
 #' Creates the `src` attribute for the Nix derivation. Handles both remote URLs
 #' (using `nix-prefetch-url`) and local paths (with optional user function
@@ -93,7 +149,7 @@ build_src_part <- function(path, user_functions = character(0)) {
   }
 }
 
-#' Build hybrid source configuration for remote URL + local user functions
+#' Build Hybrid Source Configuration for Remote URL + Local User Functions
 #' @param url Character URL
 #' @param user_functions Character vector of additional files
 #' @return Character Nix expression
@@ -130,7 +186,7 @@ build_hybrid_src <- function(url, user_functions) {
   )
 }
 
-#' Check if path is a remote URL
+#' Check If Path Is a Remote URL
 #' @param path Character path
 #' @return Logical
 #' @noRd
@@ -138,7 +194,7 @@ is_remote_url <- function(path) {
   grepl("^https?://", path)
 }
 
-#' Build remote source configuration
+#' Build Remote Source Configuration
 #' @param url Character URL
 #' @return Character Nix expression
 #' @noRd
@@ -159,7 +215,7 @@ build_remote_src <- function(url) {
   )
 }
 
-#' Build local source configuration
+#' Build Local Source Configuration
 #' @param path Character path
 #' @param user_functions Character vector of additional files
 #' @return Character Nix expression
@@ -175,7 +231,7 @@ build_local_src <- function(path, user_functions) {
   )
 }
 
-#' Sanitize nix environment string
+#' Sanitize Nix Environment String
 #'
 #' Produces a base identifier string by replacing invalid characters and
 #' stripping suffixes.
@@ -189,7 +245,7 @@ sanitize_nix_env <- function(nix_env) {
   sub("_nix$", "", base)
 }
 
-#' Build language-specific execution commands
+#' Build Language-Specific Execution Commands
 #' @param lang Language string
 #' @param read_func String representing the function to call
 #' @param user_code Source/import statements for user functions
@@ -273,7 +329,7 @@ build_language_commands <- function(
   )
 }
 
-#' Build build_phase command
+#' Build build_phase Command
 #'
 #' Constructs the build-phase shell command for R, Python, or Julia.
 #'
@@ -334,7 +390,7 @@ build_phase <- function(
   paste(all_commands, collapse = "\n")
 }
 
-#' Process read function for different languages
+#' Process Read Function for Different Languages
 #' @param read_function Function or character
 #' @param lang Language string
 #' @param parent_env Environment from calling function for proper substitution
@@ -384,7 +440,7 @@ process_read_function <- function(
   )
 }
 
-#' Process serialize function for different languages
+#' Process Serialize Function for Different Languages
 #'
 #' Mirrors the behaviour of rxp_r/rxp_py/rxp_jl:
 #' - R: supports bare symbol, character, or function; defaults to saveRDS
@@ -441,7 +497,7 @@ process_encoder <- function(
   )
 }
 
-#' Generic Nix expression builder for R, Python, and Julia data readers
+#' Generic Nix Expression Builder for R, Python, and Julia Data Readers
 #'
 #' You should not call it directly, but instead use one of `rxp_r_file()`,
 #' `rxp_py_file()` or `rxp_jl_file()`.
@@ -555,7 +611,7 @@ rxp_file <- function(
   )
 }
 
-#' Create rxp_derivation object
+#' Create rxp_derivation Object
 #' @param out_name Character output name
 #' @param snippet Character Nix snippet
 #' @param lang Character language
@@ -589,7 +645,7 @@ create_rxp_derivation <- function(
   )
 }
 
-#' Creates a Nix Expression That Reads in a File (or Folder of Data) Using R
+#' Creates a Nix Expression That Reads In a File (or Folder of Data) Using R
 #'
 #' @family derivations
 #' @return An object of class `rxp_derivation`.
@@ -603,7 +659,7 @@ create_rxp_derivation <- function(
 #' @export
 rxp_r_file <- function(...) rxp_file("R", ...)
 
-#' Creates a Nix Expression That Reads in a File (or Folder of Data) Using Python
+#' Creates a Nix Expression That Reads In a File (or Folder of Data) Using Python
 #'
 #' @family derivations
 #' @return An object of class `rxp_derivation`.
@@ -617,7 +673,7 @@ rxp_r_file <- function(...) rxp_file("R", ...)
 #' @export
 rxp_py_file <- function(...) rxp_file("Py", ...)
 
-#' Creates a Nix Expression That Reads in a File (or Folder of Data) Using Julia
+#' Creates a Nix Expression That Reads In a File (or Folder of Data) Using Julia
 #'
 #' @family derivations
 #' @return An object of class `rxp_derivation`.
@@ -631,7 +687,7 @@ rxp_py_file <- function(...) rxp_file("Py", ...)
 #' @export
 rxp_jl_file <- function(...) rxp_file("Jl", ...)
 
-#' Generate the Nix derivation snippet for Python-R object transfer.
+#' Generate the Nix Derivation Snippet for Python-R Object Transfer.
 #'
 #' This function constructs the `build_phase` and Nix derivation snippet
 #' based on the given parameters.
@@ -641,15 +697,22 @@ rxp_jl_file <- function(...) rxp_file("Jl", ...)
 #' @param nix_env Character, path to the Nix environment file.
 #' @param direction Character, either "py2r" (Python to R) or "r2py" (R to
 #'   Python).
+#' @param project_path Character, path to the project root.
 #' @return A list with elements: `name`, `snippet`, `type`, `additional_files`,
 #'   `nix_env`.
 #' @noRd
-rxp_common_setup <- function(out_name, expr_str, nix_env, direction) {
+rxp_common_setup <- function(
+  out_name,
+  expr_str,
+  nix_env,
+  direction,
+  project_path = "."
+) {
   expr_str <- gsub("\"", "'", expr_str)
   base <- sanitize_nix_env(nix_env)
 
   r_command <- build_transfer_command(out_name, expr_str, direction)
-  build_phase <- build_reticulate_phase(r_command)
+  build_phase <- build_reticulate_phase(r_command, nix_env, project_path)
 
   snippet <- make_derivation_snippet(
     out_name = out_name,
@@ -671,7 +734,8 @@ rxp_common_setup <- function(out_name, expr_str, nix_env, direction) {
   )
 }
 
-#' Build transfer command for py2r or r2py
+
+#' Build Transfer Command for py2r or r2py
 #' @param out_name Character output name
 #' @param expr_str Character expression string
 #' @param direction Character direction
@@ -700,47 +764,61 @@ build_transfer_command <- function(out_name, expr_str, direction) {
   )
 }
 
-#' Build reticulate build phase
+#' Build Reticulate Build Phase
 #' @param r_command Character R command
+#' @param nix_env Character nix environment file
+#' @param project_path Character project path
 #' @return Character build phase
 #' @noRd
-build_reticulate_phase <- function(r_command) {
+build_reticulate_phase <- function(
+  r_command,
+  nix_env = "default.nix",
+  project_path = "."
+) {
+  # Extract the Python version from the nix file
+  python_version <- extract_python_version(nix_env, project_path)
+
   sprintf(
-    "export RETICULATE_PYTHON=${defaultPkgs.python3}/bin/python\n       Rscript -e \"\n         source('libraries.R')\n%s\"",
+    "export RETICULATE_PYTHON=${defaultPkgs.%s}/bin/python\n       Rscript -e \"\n         source('libraries.R')\n%s\"",
+    python_version,
     r_command
   )
 }
 
-#' Transfer Python Object Into an R Session
+
+#' Transfer Python Object into an R Session
 #'
 #' @family interop functions
 #' @param name Symbol, name of the derivation.
 #' @param expr Symbol, Python object to be loaded into R.
 #' @param nix_env Character, path to the Nix environment file, default is
 #'   "default.nix".
+#' @param project_path Character, path to the project root, default is ".".
 #' @details `rxp_py2r(my_obj, my_python_object)` loads a serialized Python
 #'   object and saves it as an RDS file using `reticulate::py_load_object()`.
 #' @return An object of class `rxp_derivation`.
 #' @export
-rxp_py2r <- function(name, expr, nix_env = "default.nix") {
+rxp_py2r <- function(name, expr, nix_env = "default.nix", project_path = ".") {
   out_name <- deparse1(substitute(name))
   expr_str <- deparse1(substitute(expr))
-  rxp_common_setup(out_name, expr_str, nix_env, "py2r")
+  rxp_common_setup(out_name, expr_str, nix_env, "py2r", project_path)
 }
 
-#' Transfer R Object Into a Python Session
+
+#' Transfer R Object into a Python Session
 #'
 #' @family interop functions
 #' @param name Symbol, name of the derivation.
 #' @param expr Symbol, R object to be saved into a Python pickle.
 #' @param nix_env Character, path to the Nix environment file, default is
 #'   "default.nix".
+#' @param project_path Character, path to the project root, default is ".".
 #' @details `rxp_r2py(my_obj, my_r_object)` saves an R object to a Python pickle
 #'   using `reticulate::py_save_object()`.
 #' @return An object of class `rxp_derivation`.
 #' @export
-rxp_r2py <- function(name, expr, nix_env = "default.nix") {
+rxp_r2py <- function(name, expr, nix_env = "default.nix", project_path = ".") {
   out_name <- deparse1(substitute(name))
   expr_str <- deparse1(substitute(expr))
-  rxp_common_setup(out_name, expr_str, nix_env, "r2py")
+  rxp_common_setup(out_name, expr_str, nix_env, "r2py", project_path)
 }

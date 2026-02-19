@@ -1,6 +1,6 @@
 Package: rixpress
 Title: Build Reproducible Analytical Pipelines with 'Nix'
-Version: 0.11.2
+Version: 0.12.2
 Authors@R: c(
   person(given = "Bruno", family = "Rodrigues", email = "bruno@brodrigues.co", role = c("aut", "cre"),
          comment = c(ORCID = "0000-0002-3211-3689")),
@@ -29,12 +29,13 @@ Imports: cli, igraph, jsonlite, processx
 RoxygenNote: 7.3.3
 SystemRequirements: Nix
 Language: en-GB
-Suggests: dplyr, ggdag, ggplot2, knitr, mockery, reticulate, rix,
-        rmarkdown, testthat (>= 3.0.0), usethis, visNetwork
+Suggests: chronicler, dplyr, ggdag, ggplot2, knitr, maybe, mockery,
+        reticulate, rix, rmarkdown, testthat (>= 3.0.0), usethis,
+        visNetwork
 Config/testthat/edition: 3
 VignetteBuilder: knitr
 NeedsCompilation: no
-Packaged: 2026-01-28 18:19:08 UTC; brodrigues
+Packaged: 2026-02-19 07:03:48 UTC; brodrigues
 Author: Bruno Rodrigues [aut, cre] (ORCID:
     <https://orcid.org/0000-0002-3211-3689>),
   William Michael Landau [rev] (William reviewed the package (v. 0.2.0)
@@ -45,4 +46,4 @@ Author: Bruno Rodrigues [aut, cre] (ORCID:
     <https://github.com/ropensci/software-review/issues/625>)
 Maintainer: Bruno Rodrigues <bruno@brodrigues.co>
 Repository: CRAN
-Date/Publication: 2026-01-28 18:40:02 UTC
+Date/Publication: 2026-02-19 07:20:02 UTC

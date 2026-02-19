@@ -1,3 +1,6 @@
+# Suppress R CMD check notes for non-standard evaluation
+utils::globalVariables("color_group")
+
 #' @title Export DAG of Pipeline and Prepare It for Rendering on CI
 
 #' @family ci utilities
@@ -18,8 +21,6 @@
 #'   rxp_dag_for_ci()
 #'
 #' }
-utils::globalVariables("color_group")
-
 #' @export
 rxp_dag_for_ci <- function(
   nodes_and_edges = get_nodes_edges(),
@@ -146,7 +147,7 @@ get_nodes_edges <- function(path_dag = "_rixpress/dag.json") {
 
 
 #' @title Create a Directed Acyclic Graph (DAG) Representing the Pipeline
-#'   using `{ggplot2}`
+#'   Using `{ggplot2}`
 #' @family visualisation functions
 #' @description Uses `{ggdag}` to generate the plot. `{ggdag}` is a soft
 #'   dependency of `{rixpress}` so you need to install it to use this
@@ -354,7 +355,7 @@ rxp_ggdag <- function(
 }
 
 #' @title Create a Directed Acyclic Graph (DAG) Representing the Pipeline
-#'   using `{visNetwork}`
+#'   Using `{visNetwork}`
 #' @family visualisation functions
 #' @description Uses `{visNetwork}` to generate the plot. `{visNetwork}` is a
 #'   soft dependency of `{rixpress}` so you need to install it to use this
@@ -463,7 +464,7 @@ rxp_visnetwork <- function(
       function(i) {
         pipeline_grp <- nodes$pipeline_group[i]
         deriv_type <- nodes$group[i]
-        
+
         border_col <- group_colors[[pipeline_grp]]
         # Fallback for type color if not found
         bg_col <- if (deriv_type %in% names(type_colors)) {
@@ -486,7 +487,7 @@ rxp_visnetwork <- function(
         )
       }
     )
-    
+
     # Set border width to make it visible
     nodes$borderWidth <- 3
 

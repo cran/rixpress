@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+
+
+<title>Using Chronicler for Error-Tolerant Pipelines</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+
+<style type="text/css">
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
+</style>
+<style type="text/css" data-origin="pandoc">
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Using Chronicler for Error-Tolerant
+Pipelines</h1>
+
+
+
+<p>This vignette explains how to use the <code>{chronicler}</code>
+package with <code>{rixpress}</code> to build error-tolerant pipelines,
+and how to detect silent failures.</p>
+<div id="the-problem-silent-failures" class="section level2">
+<h2>The Problem: Silent Failures</h2>
+<p>When building data pipelines, errors typically cause immediate
+failure. In <code>{rixpress}</code>, if a derivation throws an error,
+Nix stops the build and reports what went wrong. This is usually
+desirable—you want to know when something breaks.</p>
+<p>But sometimes you want pipelines that <em>continue</em> even when
+parts fail. Consider:</p>
+<ul>
+<li>Processing many files where a few might be malformed</li>
+<li>Exploratory analysis where you want to see what works and what
+doesn’t</li>
+</ul>
+<p>The <code>{chronicler}</code> package provides exactly this:
+functions that capture errors and warnings instead of failing, returning
+a structured result that you can inspect later.</p>
+</div>
+<div id="what-is-chronicler" class="section level2">
+<h2>What is {chronicler}?</h2>
+<p><code>{chronicler}</code> uses the <code>{maybe}</code> package to
+implement enhanced output that logs errors and warnings instead of
+failing. When you “record” (decorate) a function using
+<code>record()</code>, it returns a <code>chronicle</code> object
+containing:</p>
+<ul>
+<li><strong><code>$value</code></strong>: Either
+<code>Just(result)</code> for success, or <code>Nothing</code> for
+failure</li>
+<li><strong><code>$log_df</code></strong>: A data frame recording all
+operations, timings, and messages</li>
+</ul>
+<p>Here’s a simple example:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(chronicler)</span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a><span class="co"># Create a recorded version of sqrt</span></span>
+<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a>r_sqrt <span class="ot">&lt;-</span> <span class="fu">record</span>(sqrt)</span>
+<span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a></span>
+<span id="cb1-6"><a href="#cb1-6" tabindex="-1"></a><span class="co"># Success case</span></span>
+<span id="cb1-7"><a href="#cb1-7" tabindex="-1"></a>result <span class="ot">&lt;-</span> <span class="fu">r_sqrt</span>(<span class="dv">4</span>)</span>
+<span id="cb1-8"><a href="#cb1-8" tabindex="-1"></a>result<span class="sc">$</span>value</span>
+<span id="cb1-9"><a href="#cb1-9" tabindex="-1"></a><span class="co">#&gt; Just</span></span>
+<span id="cb1-10"><a href="#cb1-10" tabindex="-1"></a><span class="co">#&gt; [1] 2</span></span>
+<span id="cb1-11"><a href="#cb1-11" tabindex="-1"></a></span>
+<span id="cb1-12"><a href="#cb1-12" tabindex="-1"></a><span class="co"># Failure case: sqrt(-1) produces a warning &quot;NaNs produced&quot;</span></span>
+<span id="cb1-13"><a href="#cb1-13" tabindex="-1"></a><span class="co"># With default strict=2, warnings are treated as failures</span></span>
+<span id="cb1-14"><a href="#cb1-14" tabindex="-1"></a>result <span class="ot">&lt;-</span> <span class="fu">r_sqrt</span>(<span class="sc">-</span><span class="dv">1</span>)</span>
+<span id="cb1-15"><a href="#cb1-15" tabindex="-1"></a>result<span class="sc">$</span>value</span>
+<span id="cb1-16"><a href="#cb1-16" tabindex="-1"></a><span class="co">#&gt; Nothing</span></span></code></pre></div>
+</div>
+<div id="the-challenge-with-nix-builds" class="section level2">
+<h2>The Challenge with Nix Builds</h2>
+<p>Here’s the catch: when you use chronicler functions in a
+<code>{rixpress}</code> pipeline, <strong>Nix builds never
+fail</strong>. Even when a computation produces <code>Nothing</code>,
+it’s still a valid R object that gets serialized successfully.</p>
+<p>Consider this pipeline:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="fu">library</span>(rixpress)</span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a><span class="fu">list</span>(</span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a>  <span class="fu">rxp_r</span>(</span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a>    <span class="at">name =</span> result,</span>
+<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a>    <span class="at">expr =</span> <span class="fu">r_sqrt</span>(<span class="sc">-</span><span class="dv">1</span>),  <span class="co"># This produces a `Nothing` value, not an error!</span></span>
+<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a>    <span class="at">user_functions =</span> <span class="st">&quot;functions.R&quot;</span></span>
+<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a>  )</span>
+<span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a>) <span class="sc">|&gt;</span> <span class="fu">rxp_populate</span>(<span class="at">build =</span> <span class="cn">FALSE</span>)</span></code></pre></div>
+<p>When you run <code>rxp_make()</code>, the build succeeds! But
+<code>result</code> contains <code>Nothing</code>, meaning the
+computation actually failed. Without checking, you might think your
+pipeline worked perfectly.</p>
+</div>
+<div id="the-solution-automatic-chronicle-checking" class="section level2">
+<h2>The Solution: Automatic Chronicle Checking</h2>
+<p>When <code>{chronicler}</code> is available, <code>{rixpress}</code>
+automatically checks your pipeline outputs for <code>Nothing</code>
+values after every successful build. The
+<code>rxp_check_chronicles()</code> function is called automatically by
+<code>rxp_make()</code>:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="co"># Build the pipeline - chronicle status is checked automatically!</span></span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a><span class="fu">rxp_make</span>()</span></code></pre></div>
+<p>After the build, you’ll see the status for each chronicle object:</p>
+<pre><code>Chronicle status:
+✓ filtered_mtcars (chronicle: OK)
+✓ mtcars_mpg (chronicle: OK)
+✓ mean_mpg (chronicle: OK)
+✗ sqrt_of_negative (chronicle: NOTHING)
+    Failed: sqrt
+    Message: NaNs produced
+✗ downstream_of_nothing (chronicle: NOTHING)
+    Failed: (anonymous)
+    Message: Pipeline failed upstream
+
+Summary: 3 success, 0 with warnings, 2 nothing
+Warning: 2 derivation(s) contain Nothing values!</code></pre>
+</div>
+<div id="three-state-status-system" class="section level2">
+<h2>Three-State Status System</h2>
+<p>Chronicles can be in one of three states:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Symbol</th>
+<th>State</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>✓</td>
+<td><strong>Success</strong></td>
+<td><code>Just</code> value, no warnings or errors</td>
+</tr>
+<tr class="even">
+<td>⚠</td>
+<td><strong>Warning</strong></td>
+<td><code>Just</code> value, but warnings were captured</td>
+</tr>
+<tr class="odd">
+<td>✗</td>
+<td><strong>Nothing</strong></td>
+<td>Failed computation, errors captured</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="complete-example" class="section level2">
+<h2>Complete Example</h2>
+<p>Here’s a complete example demonstrating the pattern. First, create
+<code>functions.R</code> with your recorded functions:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="co"># functions.R</span></span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a><span class="fu">library</span>(chronicler)</span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a></span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a>r_filter <span class="ot">&lt;-</span> <span class="fu">record</span>(dplyr<span class="sc">::</span>filter)</span>
+<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a>r_pull <span class="ot">&lt;-</span> <span class="fu">record</span>(dplyr<span class="sc">::</span>pull)</span>
+<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a>r_sqrt <span class="ot">&lt;-</span> <span class="fu">record</span>(sqrt)</span>
+<span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a>r_mean <span class="ot">&lt;-</span> <span class="fu">record</span>(mean)</span></code></pre></div>
+<p>Then create your pipeline in <code>gen-pipeline.R</code>:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="fu">library</span>(rixpress)</span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a></span>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a><span class="fu">list</span>(</span>
+<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a>  <span class="co"># Read data (not a chronicle)</span></span>
+<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a>  <span class="fu">rxp_r_file</span>(</span>
+<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a>    <span class="at">name =</span> mtcars,</span>
+<span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a>    <span class="at">path =</span> <span class="st">&quot;data/mtcars.csv&quot;</span>,</span>
+<span id="cb6-8"><a href="#cb6-8" tabindex="-1"></a>    <span class="at">read_function =</span> \(x) <span class="fu">read.csv</span>(<span class="at">file =</span> x, <span class="at">sep =</span> <span class="st">&quot;|&quot;</span>)</span>
+<span id="cb6-9"><a href="#cb6-9" tabindex="-1"></a>  ),</span>
+<span id="cb6-10"><a href="#cb6-10" tabindex="-1"></a></span>
+<span id="cb6-11"><a href="#cb6-11" tabindex="-1"></a>  <span class="co"># Filter using chronicler - SUCCESS</span></span>
+<span id="cb6-12"><a href="#cb6-12" tabindex="-1"></a>  <span class="fu">rxp_r</span>(</span>
+<span id="cb6-13"><a href="#cb6-13" tabindex="-1"></a>    <span class="at">name =</span> filtered_mtcars,</span>
+<span id="cb6-14"><a href="#cb6-14" tabindex="-1"></a>    <span class="at">expr =</span> mtcars <span class="sc">|&gt;</span> <span class="fu">r_filter</span>(am <span class="sc">==</span> <span class="dv">1</span>),</span>
+<span id="cb6-15"><a href="#cb6-15" tabindex="-1"></a>    <span class="at">user_functions =</span> <span class="st">&quot;functions.R&quot;</span></span>
+<span id="cb6-16"><a href="#cb6-16" tabindex="-1"></a>  ),</span>
+<span id="cb6-17"><a href="#cb6-17" tabindex="-1"></a></span>
+<span id="cb6-18"><a href="#cb6-18" tabindex="-1"></a>  <span class="co"># Pull column - SUCCESS</span></span>
+<span id="cb6-19"><a href="#cb6-19" tabindex="-1"></a>  <span class="fu">rxp_r</span>(</span>
+<span id="cb6-20"><a href="#cb6-20" tabindex="-1"></a>    <span class="at">name =</span> mtcars_mpg,</span>
+<span id="cb6-21"><a href="#cb6-21" tabindex="-1"></a>    <span class="at">expr =</span> filtered_mtcars <span class="sc">|&gt;</span> <span class="fu">bind_record</span>(r_pull, mpg),</span>
+<span id="cb6-22"><a href="#cb6-22" tabindex="-1"></a>    <span class="at">user_functions =</span> <span class="st">&quot;functions.R&quot;</span></span>
+<span id="cb6-23"><a href="#cb6-23" tabindex="-1"></a>  ),</span>
+<span id="cb6-24"><a href="#cb6-24" tabindex="-1"></a></span>
+<span id="cb6-25"><a href="#cb6-25" tabindex="-1"></a>  <span class="co"># Compute mean - SUCCESS</span></span>
+<span id="cb6-26"><a href="#cb6-26" tabindex="-1"></a>  <span class="fu">rxp_r</span>(</span>
+<span id="cb6-27"><a href="#cb6-27" tabindex="-1"></a>    <span class="at">name =</span> mean_mpg,</span>
+<span id="cb6-28"><a href="#cb6-28" tabindex="-1"></a>    <span class="at">expr =</span> mtcars_mpg <span class="sc">|&gt;</span> <span class="fu">bind_record</span>(r_mean),</span>
+<span id="cb6-29"><a href="#cb6-29" tabindex="-1"></a>    <span class="at">user_functions =</span> <span class="st">&quot;functions.R&quot;</span></span>
+<span id="cb6-30"><a href="#cb6-30" tabindex="-1"></a>  ),</span>
+<span id="cb6-31"><a href="#cb6-31" tabindex="-1"></a></span>
+<span id="cb6-32"><a href="#cb6-32" tabindex="-1"></a>  <span class="co"># Intentional failure: sqrt(-1) - NOTHING</span></span>
+<span id="cb6-33"><a href="#cb6-33" tabindex="-1"></a>  <span class="fu">rxp_r</span>(</span>
+<span id="cb6-34"><a href="#cb6-34" tabindex="-1"></a>    <span class="at">name =</span> sqrt_of_negative,</span>
+<span id="cb6-35"><a href="#cb6-35" tabindex="-1"></a>    <span class="at">expr =</span> <span class="fu">r_sqrt</span>(<span class="sc">-</span><span class="dv">1</span>),</span>
+<span id="cb6-36"><a href="#cb6-36" tabindex="-1"></a>    <span class="at">user_functions =</span> <span class="st">&quot;functions.R&quot;</span></span>
+<span id="cb6-37"><a href="#cb6-37" tabindex="-1"></a>  ),</span>
+<span id="cb6-38"><a href="#cb6-38" tabindex="-1"></a></span>
+<span id="cb6-39"><a href="#cb6-39" tabindex="-1"></a>  <span class="co"># Downstream of Nothing - also NOTHING</span></span>
+<span id="cb6-40"><a href="#cb6-40" tabindex="-1"></a>  <span class="fu">rxp_r</span>(</span>
+<span id="cb6-41"><a href="#cb6-41" tabindex="-1"></a>    <span class="at">name =</span> downstream_of_nothing,</span>
+<span id="cb6-42"><a href="#cb6-42" tabindex="-1"></a>    <span class="at">expr =</span> sqrt_of_negative <span class="sc">|&gt;</span> <span class="fu">bind_record</span>(r_mean),</span>
+<span id="cb6-43"><a href="#cb6-43" tabindex="-1"></a>    <span class="at">user_functions =</span> <span class="st">&quot;functions.R&quot;</span></span>
+<span id="cb6-44"><a href="#cb6-44" tabindex="-1"></a>  )</span>
+<span id="cb6-45"><a href="#cb6-45" tabindex="-1"></a>) <span class="sc">|&gt;</span></span>
+<span id="cb6-46"><a href="#cb6-46" tabindex="-1"></a>  <span class="fu">rxp_populate</span>(<span class="at">build =</span> <span class="cn">FALSE</span>)</span></code></pre></div>
+<p>Build the pipeline (chronicle status is checked automatically):</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="fu">rxp_make</span>()</span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a></span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a><span class="co"># You can also manually check chronicles at any time:</span></span>
+<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a><span class="co"># rxp_check_chronicles()</span></span></code></pre></div>
+</div>
+<div id="automatic-warnings" class="section level2">
+<h2>Automatic Warnings</h2>
+<p>When you read or load a chronicle with <code>Nothing</code> using
+<code>rxp_read()</code> or <code>rxp_load()</code>, you’ll automatically
+get a warning:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a><span class="fu">rxp_read</span>(<span class="st">&quot;sqrt_of_negative&quot;</span>)</span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a><span class="co">#&gt; Warning message:</span></span>
+<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a><span class="co">#&gt; Derivation &#39;sqrt_of_negative&#39; contains a chronicle with Nothing value!</span></span>
+<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a><span class="co">#&gt;   Use chronicler::read_log() on this object for details.</span></span></code></pre></div>
+<p>This helps catch silent failures even during interactive
+exploration.</p>
+</div>
+<div id="best-practices" class="section level2">
+<h2>Best Practices</h2>
+<ol style="list-style-type: decimal">
+<li><p><strong>Chronicle status is checked automatically</strong> after
+every successful build when <code>{chronicler}</code> is available. You
+can also run <code>rxp_check_chronicles()</code> manually at any
+time.</p></li>
+<li><p><strong>Use <code>chronicler::read_log()</code> for
+debugging</strong>. When a chronicle contains <code>Nothing</code>, the
+log shows exactly where and why it failed:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a>result <span class="ot">&lt;-</span> <span class="fu">rxp_read</span>(<span class="st">&quot;sqrt_of_negative&quot;</span>)</span>
+<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a><span class="fu">read_log</span>(result)</span></code></pre></div></li>
+<li><p><strong>Consider the <code>strict</code> parameter</strong>. By
+default (<code>strict = 2</code>), chronicler treats warnings as
+failures. Use <code>strict = 1</code> to allow warnings through while
+still capturing them, or <code>strict = 0</code> to ignore warnings
+entirely.</p></li>
+<li><p><strong>Chain operations with
+<code>bind_record()</code></strong>. This properly propagates
+<code>Nothing</code> values through the pipeline—if upstream fails,
+downstream automatically becomes <code>Nothing</code> too.</p></li>
+</ol>
+</div>
+<div id="when-to-use-chronicler" class="section level2">
+<h2>When to Use Chronicler</h2>
+<p>Use chronicler with rixpress when you want:</p>
+<ul>
+<li><strong>Resilient pipelines</strong> that continue even when parts
+fail</li>
+<li><strong>Detailed logging</strong> of all operations and their
+outcomes</li>
+<li><strong>Explicit failure handling</strong> rather than silent
+errors</li>
+</ul>
+<p>Don’t use chronicler when:</p>
+<ul>
+<li>You want builds to fail fast on any error (the default Nix
+behaviour)</li>
+<li>You need maximum performance (chronicler adds overhead)</li>
+<li>Your pipeline is simple and errors are rare</li>
+</ul>
+</div>
+<div id="further-reading" class="section level2">
+<h2>Further Reading</h2>
+<ul>
+<li><a href="https://b-rodrigues.github.io/chronicler/">chronicler
+package documentation</a></li>
+<li>Example project: <code>chronicler_example</code> in the <a href="https://github.com/b-rodrigues/rixpress_demos">rixpress_demos</a>
+repository</li>
+</ul>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

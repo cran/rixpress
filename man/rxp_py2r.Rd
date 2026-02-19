@@ -2,9 +2,9 @@
 % Please edit documentation in R/rxp_io.R
 \name{rxp_py2r}
 \alias{rxp_py2r}
-\title{Transfer Python object into an R session.}
+\title{Transfer Python Object into an R Session}
 \usage{
-rxp_py2r(name, expr, nix_env = "default.nix")
+rxp_py2r(name, expr, nix_env = "default.nix", project_path = ".")
 }
 \arguments{
 \item{name}{Symbol, name of the derivation.}
@@ -13,12 +13,14 @@ rxp_py2r(name, expr, nix_env = "default.nix")
 
 \item{nix_env}{Character, path to the Nix environment file, default is
 "default.nix".}
+
+\item{project_path}{Character, path to the project root, default is ".".}
 }
 \value{
 An object of class \code{rxp_derivation}.
 }
 \description{
-Transfer Python object into an R session.
+Transfer Python Object into an R Session
 }
 \details{
 \code{rxp_py2r(my_obj, my_python_object)} loads a serialized Python

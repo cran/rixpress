@@ -2,7 +2,7 @@
 % Please edit documentation in R/rxp_make.R
 \name{rxp_make}
 \alias{rxp_make}
-\title{Build pipeline using Nix}
+\title{Build Pipeline Using Nix}
 \usage{
 rxp_make(verbose = 0L, max_jobs = 1, cores = 1)
 }
@@ -22,6 +22,13 @@ A character vector of paths to the built outputs.
 }
 \description{
 Runs \code{nix-build} with a quiet flag, outputting to \verb{_rixpress/result}.
+}
+\details{
+When the \code{{chronicler}} package is available, \code{rxp_make()} automatically
+calls \code{rxp_check_chronicles()} after a successful build to check for
+\code{Nothing} values in chronicle objects. This helps detect silent failures
+in pipelines that use chronicler's \code{record()} decorated functions.
+See \code{vignette("chronicler")} for more details.
 }
 \examples{
 \dontrun{
