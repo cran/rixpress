@@ -1,10 +1,10 @@
-5b90213b20336c351b0d278ab3e9c08f *DESCRIPTION
+64060359f0ff5d96b75f197cd24c7f33 *DESCRIPTION
 52bca14cd6eb8a43c1fc31f7e0c25b33 *NAMESPACE
-fef2356b9fe7a0ece7e09015f493ab82 *NEWS.md
-85f1beae074ebb0298a4c3be44bf5afd *R/derivs.R
+a4ef6a1988fc735abc6e7e403a391aa5 *NEWS.md
+a5354530121a17f75247f4041b8e0990 *R/derivs.R
 9657abd4cfbf641e452ff544afaae99b *R/parse_pkgs.R
 34662d7ff32abb30556bf6a436a6680e *R/plot_dag.R
-b2696db03985afcf2383369bb2ec8ba4 *R/rxp_chronicler.R
+3a00712989f67182786998700451181e *R/rxp_chronicler.R
 a75546b5a535abde07409cae234f0575 *R/rxp_copy.R
 34f5b0c9a768464f47406fb3c4ec8787 *R/rxp_ga.R
 b05f27950e16e31b090af79a7204fda9 *R/rxp_gc.R
@@ -18,8 +18,8 @@ df6bcbc831e662f703f5abd9ec3ba0b7 *R/rxp_pipeline.R
 fd7aa2d15e4830b68148dd8db43d4514 *R/rxp_trace.R
 2e52a185674f30102fd283f00a122355 *R/rxp_write_dag.R
 5ad10be716b3460a1c5553ebf93d4dc5 *R/zzz.R
-3eaeb49b81276b5f7298053d6abd4c24 *README.md
-9d2dc65ccd2c46270613f2eb707ad0b8 *build/vignette.rds
+bfd2b5712dee5c1bd484bf2f6582c8b2 *README.md
+e0321a5b04b4612ccd56c718cd4741f7 *build/vignette.rds
 a79643298f4db6f95ab9b78f7019f8b0 *inst/doc/chronicler.R
 6a20e26f1288012ab42984c9c686468a *inst/doc/chronicler.Rmd
 be36a495e5f41044acdc65a8b8b1a216 *inst/doc/chronicler.html
@@ -101,7 +101,7 @@ e19cd585abc4fcdee8ed757f8c1628c9 *man/rxp_trace.Rd
 0e6490a105c62eed05b267fd766d35c9 *tests/testthat/test-chronicler.R
 338f6aa6c46c53c5afb80764370e589b *tests/testthat/test-data/dag.json
 6ed4abf8c81514d623a9d1a3b762d670 *tests/testthat/test-data/default.nix
-2de56988060144578c44951574ee616d *tests/testthat/test-derive_r.R
+768f71a6b7986ba80d337161d5330b58 *tests/testthat/test-derive_r.R
 439a89760dc56c1f310d9bff699a1301 *tests/testthat/test-generate_dag.R
 f72a2aada305f5d8d485ab19625ec48e *tests/testthat/test-generate_libraries_from_nix.R
 4dbc08d1d016260fff43181bf41e4cd5 *tests/testthat/test-parse-pkgs.R
